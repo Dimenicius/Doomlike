@@ -10,12 +10,18 @@ class Game():
 
         self.font = pygame.font.Font(font, font_size)
 
+        pygame.mixer.music.load('sounds/music0.ogg')
+
+        self.shoot_sound = pygame.mixer.Sound('sounds/shoot.wav')
+        self.player_death = pygame.mixer.Sound('sounds/PlayerDeath.wav')
+        self.player_hurt = pygame.mixer.Sound('sounds/PlayerHurt.wav')
+
         self.screen = screen
         self.scr_width = self.screen.get_rect().width
         self.scr_height = self.screen.get_rect().height
 
         self.background = pygame.image.load('bg.jpg')
-        self.counter = 0
+
         self.bg_size = self.background.get_width()
 
     def drawCounter(self):
@@ -54,6 +60,7 @@ class Game():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     if self.shoot is False:
+                        self.shoot_sound.play(0)
                         self.shoot = True
                         self.shootList.append(Shoot(self.screen))
 
@@ -75,79 +82,83 @@ class Game():
         self.screen.blit(text, (100, 530))
 
     def run(self):
-        global mainloop
-        mainloop = True
 
-        self.shoot = False
-        self.bg_pos = [0, 0]
-        player = Player()
-        self.shootList = []
-        self.enemyList = []
+        while True:
+            global mainloop
+            mainloop = True
+            self.counter = 0
+            self.shoot = False
+            self.bg_pos = [0, 0]
+            player = Player()
+            self.shootList = []
+            self.enemyList = []
+            pygame.mixer.music.play(-1)
 
-        while mainloop:
-            pygame.mouse.set_pos([self.scr_width / 2, self.scr_height / 2])
-            self.screen.blit(self.background, self.bg_pos)
+            while mainloop:
+                self.screen.blit(self.background, self.bg_pos)
 
-            if self.bg_pos[0] < -1950:
-                self.screen.blit(
-                    self.background, (self.bg_pos[0] + 1880 + self.scr_width, self.bg_pos[1]))
-            elif self.bg_pos[0] > 0:
-                self.screen.blit(
-                    self.background, (self.bg_pos[0] - 2685, self.bg_pos[1]))
+                if self.bg_pos[0] < -1950:
+                    self.screen.blit(
+                        self.background, (self.bg_pos[0] + 1880 + self.scr_width, self.bg_pos[1]))
+                elif self.bg_pos[0] > 0:
+                    self.screen.blit(
+                        self.background, (self.bg_pos[0] - 2685, self.bg_pos[1]))
 
-            self.checkEvents()
+                self.checkEvents()
 
-            for index, shoot in enumerate(self.shootList):
-                shoot.refresh()
-                self.screen.blit(shoot.img, (shoot.pos_x - 10 + int(shoot.Orig_img.get_width() / 2 - shoot.img.get_width() / 2),
-                                             self.scr_height / 2 + 20 - int(shoot.pos_z / 10)))
+                for index, shoot in enumerate(self.shootList):
+                    shoot.refresh()
+                    self.screen.blit(shoot.img, (shoot.pos_x - 10 + int(shoot.Orig_img.get_width() / 2 - shoot.img.get_width() / 2),
+                                                 self.scr_height / 2 + 20 - int(shoot.pos_z / 10)))
 
-                if shoot.pos_z >= self.scr_height / 2:
-                    self.shootList.pop(index)
+                    if shoot.pos_z >= self.scr_height / 2:
+                        self.shootList.pop(index)
 
-            if len(self.enemyList) > 0:
-                for enemy in reversed(self.enemyList):
-                    enemy.refresh()
-                    self.screen.blit(enemy.img, (enemy.pos_x - 10 + int(enemy.Orig_imgs[0].get_width() / 2 - enemy.img.get_width() / 2),
-                                                 self.scr_height / 2 - 90 - int(enemy.pos_z / 20)))
+                if len(self.enemyList) > 0:
+                    for enemy in reversed(self.enemyList):
+                        enemy.refresh()
+                        self.screen.blit(enemy.img, (enemy.pos_x - 10 + int(enemy.Orig_imgs[0].get_width() / 2 - enemy.img.get_width() / 2),
+                                                     self.scr_height / 2 - 90 - int(enemy.pos_z / 20)))
 
-                for enemy in self.enemyList:
-                    if enemy.pos_z < -1000:
-                        if enemy.exploding is False:
-                            enemy.exploding = True
-                            enemy.explosionAnim()
-                            player.life -= 1
+                    for enemy in self.enemyList:
+                        if enemy.pos_z < -1000:
+                            if enemy.exploding is False:
+                                enemy.explo_sound.play(0)
+                                enemy.exploding = True
+                                enemy.explosionAnim()
+                                self.player_hurt.play(0)
+                                player.life -= 1
 
-            if random.randint(0, 2000) > 1990:
-                self.enemyList.append(Enemy(self.screen))
+                if random.randint(0, 2000) > 1990:
+                    self.enemyList.append(Enemy(self.screen))
 
-            for enemy_index, enemy in enumerate(self.enemyList):
-                for shoot_index, shoot in enumerate(self.shootList):
-                    # pygame.draw.rect(self.screen, (255, 255, 255), shoot.rect)
-                    # pygame.draw.rect(self.screen, (255, 0, 0), enemy.rect)
+                for enemy_index, enemy in enumerate(self.enemyList):
+                    for shoot_index, shoot in enumerate(self.shootList):
+                        # pygame.draw.rect(self.screen, (255, 255, 255), shoot.rect)
+                        # pygame.draw.rect(self.screen, (255, 0, 0), enemy.rect)
 
-                    enemy_dist = abs(enemy.pos_z) / 1000
-                    shoot_dist = abs(shoot.pos_z) / 240
+                        enemy_dist = abs(enemy.pos_z) / 1000
+                        shoot_dist = abs(shoot.pos_z) / 240
 
-                    if enemy.rect.colliderect(shoot.rect) and abs(enemy_dist - shoot_dist) < 0.1:
-                        self.shootList.pop(shoot_index)
-                        enemy.life -= 1
-                        if enemy.life == 0:
-                            enemy.deadAnim()
-                if enemy.dead is True:
-                    self.counter += 1
-                    self.enemyList.pop(enemy_index)
+                        if enemy.rect.colliderect(shoot.rect) and abs(enemy_dist - shoot_dist) < 0.1:
+                            self.shootList.pop(shoot_index)
+                            enemy.life -= 1
+                            if enemy.life == 0:
+                                enemy.death_sound[random.randint(0, 1)].play(0)
+                                enemy.deadAnim()
+                    if enemy.dead is True:
+                        self.counter += 1
+                        self.enemyList.pop(enemy_index)
 
-            self.blitChar(player)
-            self.drawCounter()
-            self.drawLifes(player)
+                self.blitChar(player)
+                self.drawCounter()
+                self.drawLifes(player)
 
-            pygame.display.flip()
+                pygame.display.flip()
 
-            if player.life <= 0:
-                mainloop = False
-
-        input()
+                if player.life <= 0:
+                    self.player_death.play(0)
+                    mainloop = False
 
 
 class Shoot():
@@ -204,6 +215,11 @@ class Enemy():
         for i in range(5):
             self.Orig_explo.append(pygame.image.load(
                 'enemy/explosion' + str(i) + '.png'))
+
+        self.explo_sound = pygame.mixer.Sound('sounds/explosion.wav')
+        self.roam_sound = pygame.mixer.Sound('sounds/ImpRoam.wav')
+        self.death_sound = [pygame.mixer.Sound('sounds/ImpDeath1.wav'),
+                            pygame.mixer.Sound('sounds/ImpDeath2.wav')]
 
         self.pos_z = 100
         self.pos_x = random.randint(100, 700)
@@ -313,8 +329,6 @@ if __name__ == "__main__":
     screen = pygame.display.set_mode((800, 600), 0, 32)
 
     pygame.display.set_caption('Doomlike')
-
-    pygame.mouse.set_visible(False)
 
     Game = Game(screen)
     Game.run()
