@@ -114,21 +114,6 @@ class Game():
                     if shoot.pos_z >= self.scr_height / 2:
                         self.shootList.pop(index)
 
-                if len(self.enemyList) > 0:
-                    for enemy in reversed(self.enemyList):
-                        enemy.refresh()
-                        self.screen.blit(enemy.img, (enemy.pos_x - 10 + int(enemy.Orig_imgs[0].get_width() / 2 - enemy.img.get_width() / 2),
-                                                     self.scr_height / 2 - 90 - int(enemy.pos_z / 20)))
-
-                    for enemy in self.enemyList:
-                        if enemy.pos_z < -1000:
-                            if enemy.exploding is False:
-                                enemy.explo_sound.play(0)
-                                enemy.exploding = True
-                                enemy.explosionAnim()
-                                self.player_hurt.play(0)
-                                player.life -= 1
-
                 if random.randint(0, 2000) > 1990:
                     self.enemyList.append(Enemy(self.screen))
 
@@ -149,6 +134,21 @@ class Game():
                     if enemy.dead is True:
                         self.counter += 1
                         self.enemyList.pop(enemy_index)
+
+                if len(self.enemyList) > 0:
+                    for enemy in reversed(self.enemyList):
+                        enemy.refresh()
+                        self.screen.blit(enemy.img, (enemy.pos_x - 10 + int(enemy.Orig_imgs[0].get_width() / 2 - enemy.img.get_width() / 2),
+                                                     self.scr_height / 2 - 90 - int(enemy.pos_z / 20)))
+
+                    for enemy in self.enemyList:
+                        if enemy.pos_z < -1000:
+                            if enemy.exploding is False:
+                                enemy.explo_sound.play(0)
+                                enemy.exploding = True
+                                enemy.explosionAnim()
+                                self.player_hurt.play(0)
+                                player.life -= 1
 
                 self.blitChar(player)
                 self.drawCounter()
