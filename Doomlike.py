@@ -28,15 +28,16 @@ class Game():
 
     def checkEvents(self):
         global mainloop
-        mouse_pos = pygame.mouse.get_pos()
 
-        if mouse_pos[0] > self.scr_width / 2:
+        pressed = pygame.key.get_pressed()
+
+        if pressed[pygame.K_d]:
             for shoot in self.shootList:
                 shoot.refreshX(-10)
             for enemy in self.enemyList:
                 enemy.refreshX(-10)
             self.bg_pos[0] -= 10
-        elif mouse_pos[0] < self.scr_width / 2:
+        if pressed[pygame.K_a]:
             for shoot in self.shootList:
                 shoot.refreshX(10)
             for enemy in self.enemyList:
@@ -50,17 +51,11 @@ class Game():
 
         for event in pygame.event.get():
 
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
                     if self.shoot is False:
                         self.shoot = True
                         self.shootList.append(Shoot(self.screen))
-                elif event.button == 3:
-                    self.enemyList.append(Enemy(self.screen))
-
-            elif event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 1:
-                    pass
 
     def blitChar(self, player):
         player_size = player.sprites[player.currsprite].get_rect().width / 2
