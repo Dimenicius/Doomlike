@@ -24,6 +24,8 @@ class Game():  # Classe principal
         self.background = pygame.image.load('bg.jpg')
         self.bg_size = self.background.get_width()
 
+        self.enemyRespaw = 1
+
     def drawCounter(self):  # Desenha o contador de mortes
         text = 'Kills: ' + str(self.counter)
         text = self.font.render(text, True, (250, 250, 250))
@@ -119,7 +121,10 @@ class Game():  # Classe principal
                         self.shootList.pop(index)
 
                 # Gera inimigos
-                if random.randint(0, 2000) > 1990:
+
+                self.enemyRespaw = (self.enemyRespaw +
+                                    1) % (300 - self.counter * 3)
+                if self.enemyRespaw == 0:
                     self.enemyList.append(Enemy(self.screen))
 
                 # Verifica colisão entre Shoot() e Enemy()
@@ -259,6 +264,10 @@ class Enemy():  # Classe de inimigos
 
     def refreshX(self, add):  # Atualiza posição em X
         self.pos_x += add
+        if self.pos_x > 2650:
+            self.pos_x = -50
+        elif self.pos_x < -2650:
+            self.pos_x = -50
 
     def deadAnim(self):  # Ativa animação de morte
         self.dying = True
