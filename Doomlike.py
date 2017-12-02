@@ -127,7 +127,10 @@ class Game():
 
                         if enemy.rect.colliderect(shoot.rect) and abs(enemy_dist - shoot_dist) < 0.1:
                             self.shootList.pop(shoot_index)
+                            enemy.pain.play(0)
                             enemy.life -= 1
+                            enemy.hit = True
+                            enemy.hittimer = 0
                             if enemy.life == 0:
                                 enemy.death_sound[random.randint(0, 1)].play(0)
                                 enemy.deadAnim()
@@ -197,9 +200,11 @@ class Enemy():
         self.life = 3
 
         self.Orig_imgs = []
+        self.Hit_imgs = []
         self.Orig_death = []
         self.Orig_explo = []
 
+        self.hit = False
         self.isAlive = True
 
         self.screen = screen
@@ -207,6 +212,10 @@ class Enemy():
         for i in range(5):
             self.Orig_imgs.append(pygame.image.load(
                 'enemy/enemy' + str(i) + '.png'))
+
+        for i in range(5):
+            self.Hit_imgs.append(pygame.image.load(
+                'enemy/enemyhit' + str(i) + '.png'))
 
         for i in range(10):
             self.Orig_death.append(pygame.image.load(
@@ -217,9 +226,12 @@ class Enemy():
                 'enemy/explosion' + str(i) + '.png'))
 
         self.explo_sound = pygame.mixer.Sound('sounds/explosion.wav')
+        self.pain = pygame.mixer.Sound('sounds/ImpPain.wav')
         self.roam_sound = pygame.mixer.Sound('sounds/ImpRoam.wav')
         self.death_sound = [pygame.mixer.Sound('sounds/ImpDeath1.wav'),
                             pygame.mixer.Sound('sounds/ImpDeath2.wav')]
+
+        self.roam_sound.play(0)
 
         self.pos_z = 100
         self.pos_x = random.randint(100, 700)
@@ -272,8 +284,12 @@ class Enemy():
         else:
             size = self.pos_z / 5
 
-            self.img = pygame.transform.scale(
-                self.Orig_imgs[self.currsprite], (int(self.Orig_imgs[0].get_width() - size), int(self.Orig_imgs[0].get_height() - size)))
+            if self.hit:
+                self.img = pygame.transform.scale(
+                    self.Hit_imgs[self.currsprite], (int(self.Hit_imgs[0].get_width() - size), int(self.Hit_imgs[0].get_height() - size)))
+            else:
+                self.img = pygame.transform.scale(
+                    self.Orig_imgs[self.currsprite], (int(self.Orig_imgs[0].get_width() - size), int(self.Orig_imgs[0].get_height() - size)))
 
             self.rect = pygame.Rect(self.pos_x - 10 + int(self.Orig_imgs[0].get_width() / 2 - self.img.get_width() / 4),
                                     self.screen.get_rect().height / 4 - int(self.pos_z / 20) + 110, self.img.get_width() / 2, self.img.get_height() / 2)
@@ -283,6 +299,11 @@ class Enemy():
                 self.currsprite += 1
                 self.currsprite = self.currsprite % 5
                 self.pos_z -= 10
+
+            if self.hit:
+                self.hittimer = (self.hittimer + 1) % 15
+                if self.hittimer == 0:
+                    self.hit = False
 
 
 class Player():

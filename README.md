@@ -10,4 +10,5 @@ In game folder ```python Doomlike.py``` or ```python3 Doomlike.py```
 ### Controls
 
 **```<A>```** and **```<D>```** to move
+
 **```<SPACE>```** to shoot
