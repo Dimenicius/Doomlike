@@ -1,1 +1,1 @@
-pyg.exe Doomlike.py
+pyg3.exe Doomlike.py
