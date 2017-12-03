@@ -1,3 +1,5 @@
+#-*-coding:UTF-8-*-
+
 import pygame
 import random
 # import os
