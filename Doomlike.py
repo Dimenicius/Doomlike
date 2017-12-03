@@ -30,11 +30,11 @@ class Utils():  # Utilitarios
 
 
 class Shoot():  # Classe do tiro
-    def __init__(self, screen):  # Inicia a classe
+    def __init__(self, screen, shoot_img):  # Inicia a classe
 
         self.screen = screen
 
-        self.Orig_img = pygame.image.load('shoot.png')
+        self.Orig_img = shoot_img
         self.Orig_img = pygame.transform.scale(
             self.Orig_img, (self.Orig_img.get_width() * 3, self.Orig_img.get_height() * 3))
 
@@ -63,13 +63,13 @@ class Shoot():  # Classe do tiro
 
 
 class Enemy():  # Classe de inimigos
-    def __init__(self, screen):  # Inicializa a classe
+    def __init__(self, screen, orig_img, hit_imgs, orig_death, orig_explo, sound_explo, sound_pain, sound_roam, sound_death):  # Inicializa a classe
         self.screen = screen
 
-        self.Orig_imgs = []
-        self.Hit_imgs = []
-        self.Orig_death = []
-        self.Orig_explo = []
+        self.Orig_imgs = orig_img
+        self.Hit_imgs = hit_imgs
+        self.Orig_death = orig_death
+        self.Orig_explo = orig_explo
 
         self.hit = False
         self.isAlive = True
@@ -77,29 +77,11 @@ class Enemy():  # Classe de inimigos
         self.currsprite = 0
         self.life = 3
 
-        # Carrega os sprites
-        for i in range(5):
-            self.Orig_imgs.append(pygame.image.load(
-                'enemy/enemy' + str(i) + '.png'))
-
-        for i in range(5):
-            self.Hit_imgs.append(pygame.image.load(
-                'enemy/enemyhit' + str(i) + '.png'))
-
-        for i in range(10):
-            self.Orig_death.append(pygame.image.load(
-                'enemy/death' + str(i) + '.png'))
-
-        for i in range(5):
-            self.Orig_explo.append(pygame.image.load(
-                'enemy/explosion' + str(i) + '.png'))
-
         # Carrega os sons
-        self.explo_sound = pygame.mixer.Sound('sounds/explosion.wav')
-        self.pain = pygame.mixer.Sound('sounds/ImpPain.wav')
-        self.roam_sound = pygame.mixer.Sound('sounds/ImpRoam.wav')
-        self.death_sound = [pygame.mixer.Sound('sounds/ImpDeath1.wav'),
-                            pygame.mixer.Sound('sounds/ImpDeath2.wav')]
+        self.explo_sound = sound_explo
+        self.pain = sound_pain
+        self.roam_sound = sound_roam
+        self.death_sound = sound_death
 
         self.roam_sound.play(0)
 
@@ -118,8 +100,8 @@ class Enemy():  # Classe de inimigos
         self.pos_x += add
         if self.pos_x > 2650:
             self.pos_x = -50
-        elif self.pos_x < -2650:
-            self.pos_x = -50
+        elif self.pos_x < -1800:
+            self.pos_x = 850
 
     def deadAnim(self):  # Ativa animação de morte
         self.dying = True
@@ -224,6 +206,9 @@ class Game():  # Classe principal
         self.font = pygame.font.Font(font, font_size)
         self.title = pygame.font.Font(font, 80)
 
+        self.menuItems = ['PLAY', 'HIGHSCORES']
+        self.menu_pos = 0
+
         # Carregar Audio
         pygame.mixer.music.load('sounds/music0.ogg')
         self.shoot_sound = pygame.mixer.Sound('sounds/shoot.wav')
@@ -233,7 +218,40 @@ class Game():  # Classe principal
         # Carregar imagem de fundo
         self.background = pygame.image.load('bg.jpg')
         self.hs_bg = pygame.image.load('highscore.png')
+        self.menu = pygame.image.load('menu.png')
         self.bg_size = self.background.get_width()
+
+        # Sprites
+        self.shootImg = pygame.image.load('shoot.png')
+
+        self.Orig_imgs = []
+        self.Hit_imgs = []
+        self.Orig_death = []
+        self.Orig_explo = []
+
+        # Carrega os sprites
+        for i in range(5):
+            self.Orig_imgs.append(pygame.image.load(
+                'enemy/enemy' + str(i) + '.png'))
+
+        for i in range(5):
+            self.Hit_imgs.append(pygame.image.load(
+                'enemy/enemyhit' + str(i) + '.png'))
+
+        for i in range(10):
+            self.Orig_death.append(pygame.image.load(
+                'enemy/death' + str(i) + '.png'))
+
+        for i in range(5):
+            self.Orig_explo.append(pygame.image.load(
+                'enemy/explosion' + str(i) + '.png'))
+
+        # Carrega os sons
+        self.explo_sound = pygame.mixer.Sound('sounds/explosion.wav')
+        self.pain = pygame.mixer.Sound('sounds/ImpPain.wav')
+        self.roam_sound = pygame.mixer.Sound('sounds/ImpRoam.wav')
+        self.death_sound = [pygame.mixer.Sound('sounds/ImpDeath1.wav'),
+                            pygame.mixer.Sound('sounds/ImpDeath2.wav')]
 
         self.name = 'AAA'
 
@@ -247,7 +265,7 @@ class Game():  # Classe principal
 
         self.screen.blit(text, (self.scr_width / 2 - t_w / 2, 20))
 
-    def drawHS(self):
+    def drawHS(self):  # Desenha os HighScores
         text = self.title.render('HIGHSCORES', True, (200, 200, 200))
         t_w = text.get_rect().width
         self.screen.blit(text, (self.scr_width / 2 - t_w / 2, 20))
@@ -256,38 +274,45 @@ class Game():  # Classe principal
         isHigh = False
         sumHigh = 0
         HS_List = Utils().getScores('highscores')
-        if len(HS_List) > 5:
-            if self.counter > int(HS_List[5][1]):
+
+        if self.counter is 0:
+            self.canEdit = False
+        else:
+            # Verifica se a pontuação entra nos highscores
+            if len(HS_List) > 5:
+                if self.counter > int(HS_List[5][1]):
+                    isHigh = True
+            else:
                 isHigh = True
 
-        else:
-            isHigh = True
+            # Se não entrar, só exibe no fim da lista
+            if isHigh is False:
+                if len(HS_List) > 5:
+                    size = 5
+                else:
+                    size = len(HS_List)
+                name = self.font.render('You', True, (150, 150, 150))
+                score = self.font.render(
+                    str(self.counter), True, (150, 150, 150))
+                s_w = score.get_rect().width
+                size += 1
+                self.screen.blit(
+                    name, (self.scr_width / 2 - 200, 50 * size + 120))
+                self.screen.blit(
+                    score, (self.scr_width / 2 + 200 - s_w, 50 * size + 120))
+                self.canEdit = False
 
-        if isHigh is False:
-            if len(HS_List) > 5:
-                size = 5
-            else:
-                size = len(HS_List)
-            name = self.font.render('You', True, (150, 150, 150))
-            score = self.font.render(str(self.counter), True, (150, 150, 150))
-            s_w = score.get_rect().width
-            size += 1
-            self.screen.blit(
-                name, (self.scr_width / 2 - 200, 50 * size + 120))
-            self.screen.blit(
-                score, (self.scr_width / 2 + 200 - s_w, 50 * size + 120))
-            self.canEdit = False
+        text = self.font.render(
+            'press <ENTER> to continue', True, (250, 250, 250))
+        t_w = text.get_rect().width
+        self.screen.blit(text, (self.scr_width / 2 -
+                                t_w / 2, self.scr_height - 80))
 
-            text = self.font.render(
-                'press <ENTER> to restart', True, (250, 250, 250))
-            t_w = text.get_rect().width
-            self.screen.blit(text, (self.scr_width / 2 -
-                                    t_w / 2, self.scr_height - 80))
-
+        # Desenha toda lista
         for index, hscore in enumerate(HS_List):
             if index > 5:
                 break
-            if isHigh:
+            if isHigh:  # Posiciona a pontuação corretamente na lista, caso ela entre
                 if self.counter > int(hscore[1]):
                     name = self.font.render(self.name, True, (250, 50, 50))
                     score = self.font.render(
@@ -308,8 +333,37 @@ class Game():  # Classe principal
             self.screen.blit(
                 score, (self.scr_width / 2 + 200 - s_w, 50 * index + sumHigh + 120))
 
+    def drawMenu(self):
+        for index, item in enumerate(self.menuItems):
+            if self.menu_pos == index:
+                item = self.title.render(
+                    self.menuItems[index], True, (250, 0, 0))
+            else:
+                item = self.title.render(
+                    self.menuItems[index], True, (250, 250, 250))
+            item_w = item.get_rect().width
+            self.screen.blit(
+                item, (self.scr_width / 2 - item_w / 2, 80 * index + 420))
+
     def checkEvents(self):  # Eventos de input
-        if self.isRunning:
+        if self.Menu:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_DOWN:
+                        self.menu_pos = abs(
+                            self.menu_pos - 1) % len(self.menuItems)
+                    elif event.key == pygame.K_UP:
+                        self.menu_pos = abs(
+                            self.menu_pos + 1) % len(self.menuItems)
+                    elif event.key == pygame.K_RETURN:
+                        if self.menu_pos == 0:
+                            self.Menu = False
+                            self.isRunning = True
+                        elif self.menu_pos == 1:
+                            self.Menu = False
+                            self.isRunning = False
+
+        elif self.isRunning:
             pressed = pygame.key.get_pressed()
             # Movimentação lateral
             if pressed[pygame.K_d]:
@@ -340,9 +394,12 @@ class Game():  # Classe principal
                         if self.shoot is False:
                             self.shoot_sound.play(0)
                             self.shoot = True
-                            self.shootList.append(Shoot(self.screen))
+                            self.shootList.append(
+                                Shoot(self.screen, self.shootImg))
                     elif event.key == pygame.K_w:
-                        self.enemyList.append(Enemy(self.screen))
+                        self.enemyList.append(Enemy(self.screen, self.Orig_imgs, self.Hit_imgs, self.Orig_death,
+                                                    self.Orig_explo, self.explo_sound, self.pain, self.roam_sound, self.death_sound))
+
         else:
             if self.canEdit:
                 for event in pygame.event.get():
@@ -360,6 +417,7 @@ class Game():  # Classe principal
                         elif event.key == pygame.K_RETURN:
                             Utils().addToFile(self.name + ';' + str(self.counter), 'highscores')
                             Utils().sortScores('highscores')
+                            self.Menu = True
                             self.reset()
                         elif event.key == pygame.K_ESCAPE:
                             exit()
@@ -367,6 +425,7 @@ class Game():  # Classe principal
                 for event in pygame.event.get():
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_RETURN:
+                            self.Menu = True
                             self.reset()
 
     def blitChar(self, player):  # Printa a mão do personagem na tela
@@ -386,7 +445,7 @@ class Game():  # Classe principal
         self.screen.blit(img, (10, 500))
         self.screen.blit(text, (100, 530))
 
-    def reset(self):
+    def reset(self):  # Reseta todas as flags e variaveis para posição inicial
         self.counter = 0
         self.shoot = False
         self.bg_pos = [0, 0]
@@ -396,104 +455,98 @@ class Game():  # Classe principal
 
         self.player = Player()
 
-    def printAll(self):
-        print('-------------____----------')
-        print(self.counter)
-        print(self.shoot)
-        print(self.bg_pos)
-        print(self.shootList)
-        print(self.enemyList)
-        print(self.isRunning)
-
     def run(self):
         self.isRunning = True
         while True:  # Loop principal
             global mainloop
             mainloop = True
-
             pygame.mixer.music.play(-1)
             self.reset()
-
+            self.Menu = True
             while mainloop:  # Loop da partida
-                self.printAll()
-                if self.isRunning:
-                    # Printa o background
-                    self.screen.blit(self.background, self.bg_pos)
-
-                    if self.bg_pos[0] < -1950:
-                        self.screen.blit(
-                            self.background, (self.bg_pos[0] + 1880 + self.scr_width, self.bg_pos[1]))
-                    elif self.bg_pos[0] > 0:
-                        self.screen.blit(
-                            self.background, (self.bg_pos[0] - 2685, self.bg_pos[1]))
-
-                    # Printa os Tiros
-                    for index, shoot in enumerate(self.shootList):
-                        shoot.refresh()
-                        self.screen.blit(shoot.img, (shoot.pos_x - 10 + int(shoot.Orig_img.get_width() / 2 - shoot.img.get_width() / 2),
-                                                     self.scr_height / 2 + 20 - int(shoot.pos_z / 10)))
-
-                        if shoot.pos_z >= self.scr_height / 2:
-                            self.shootList.pop(index)
-
-                    # Gera inimigos
-
-                    self.enemyRespaw = (self.enemyRespaw +
-                                        1) % (300 - self.counter * 3)
-                    if self.enemyRespaw == 0:
-                        self.enemyList.append(Enemy(self.screen))
-
-                    # Verifica colisão entre Shoot() e Enemy()
-                    for enemy_index, enemy in enumerate(self.enemyList):
-                        for shoot_index, shoot in enumerate(self.shootList):
-
-                            enemy_dist = abs(enemy.pos_z) / 1000
-                            shoot_dist = abs(shoot.pos_z) / 240
-
-                            if enemy.rect.colliderect(shoot.rect) and abs(enemy_dist - shoot_dist) < 0.1:
-                                self.shootList.pop(shoot_index)
-                                enemy.pain.play(0)
-                                enemy.life -= 1
-                                enemy.hit = True
-                                enemy.hittimer = 0
-                                if enemy.life == 0:
-                                    enemy.death_sound[random.randint(
-                                        0, 1)].play(0)
-                                    enemy.deadAnim()
-                        if enemy.dead is True:
-                            self.counter += 1
-                            self.enemyList.pop(enemy_index)
-
-                    # Printa os inimigos
-                    if len(self.enemyList) > 0:
-                        for enemy in reversed(self.enemyList):
-                            enemy.refresh()
-                            self.screen.blit(enemy.img, (enemy.pos_x - 10 + int(enemy.Orig_imgs[0].get_width() / 2 - enemy.img.get_width() / 2),
-                                                         self.scr_height / 2 - 90 - int(enemy.pos_z / 20)))
-
-                        # Dano no personagem baseado na pos_z do inimigo
-                        for enemy in self.enemyList:
-                            if enemy.pos_z < -1000:
-                                if enemy.exploding is False:
-                                    enemy.explo_sound.play(0)
-                                    enemy.exploding = True
-                                    enemy.currsprite = 0
-                                    self.player_hurt.play(0)
-                                    self.player.life -= 1
-
-                    # Chama as funções de printar
-                    self.blitChar(self.player)
-                    self.drawCounter()
-                    self.drawLifes(self.player)
-
-                    # Verifica se o personagem está vivo
-                    if self.player.life <= 0:
-                        self.player_death.play(0)
-                        self.isRunning = False
-                        self.canEdit = True
+                if self.Menu:
+                    self.screen.blit(self.menu, (0, 0))
+                    self.drawMenu()
                 else:
-                    self.screen.blit(self.hs_bg, (0, 0))
-                    self.drawHS()
+                    if self.isRunning:
+                        # Printa o background
+                        self.screen.blit(self.background, self.bg_pos)
+
+                        if self.bg_pos[0] < -1950:
+                            self.screen.blit(
+                                self.background, (self.bg_pos[0] + 1880 + self.scr_width, self.bg_pos[1]))
+                        elif self.bg_pos[0] > 0:
+                            self.screen.blit(
+                                self.background, (self.bg_pos[0] - 2685, self.bg_pos[1]))
+
+                        # Printa os Tiros
+                        for index, shoot in enumerate(self.shootList):
+                            shoot.refresh()
+                            self.screen.blit(shoot.img, (shoot.pos_x - 10 + int(shoot.Orig_img.get_width() / 2 - shoot.img.get_width() / 2),
+                                                         self.scr_height / 2 + 20 - int(shoot.pos_z / 10)))
+
+                            if shoot.pos_z >= self.scr_height / 2:
+                                self.shootList.pop(index)
+
+                        # Gera inimigos
+
+                        self.enemyRespaw = (self.enemyRespaw +
+                                            1) % (300 - self.counter * 3)
+                        if self.enemyRespaw == 0:
+                            self.enemyList.append(Enemy(self.screen, self.Orig_imgs, self.Hit_imgs, self.Orig_death,
+                                                        self.Orig_explo, self.explo_sound, self.pain, self.roam_sound, self.death_sound))
+
+                        # Verifica colisão entre Shoot() e Enemy()
+                        for enemy_index, enemy in enumerate(self.enemyList):
+                            for shoot_index, shoot in enumerate(self.shootList):
+
+                                enemy_dist = abs(enemy.pos_z) / 1000
+                                shoot_dist = abs(shoot.pos_z) / 240
+
+                                if enemy.rect.colliderect(shoot.rect) and abs(enemy_dist - shoot_dist) < 0.1:
+                                    self.shootList.pop(shoot_index)
+                                    enemy.pain.play(0)
+                                    enemy.life -= 1
+                                    enemy.hit = True
+                                    enemy.hittimer = 0
+                                    if enemy.life == 0:
+                                        enemy.death_sound[random.randint(
+                                            0, 1)].play(0)
+                                        enemy.deadAnim()
+                            if enemy.dead is True:
+                                self.counter += 1
+                                self.enemyList.pop(enemy_index)
+
+                        # Printa os inimigos
+                        if len(self.enemyList) > 0:
+                            for enemy in reversed(self.enemyList):
+                                enemy.refresh()
+                                self.screen.blit(enemy.img, (enemy.pos_x - 10 + int(enemy.Orig_imgs[0].get_width() / 2 - enemy.img.get_width() / 2),
+                                                             self.scr_height / 2 - 90 - int(enemy.pos_z / 20)))
+
+                            # Dano no personagem baseado na pos_z do inimigo
+                            for enemy in self.enemyList:
+                                if enemy.pos_z < -1000:
+                                    if enemy.exploding is False:
+                                        enemy.explo_sound.play(0)
+                                        enemy.exploding = True
+                                        enemy.currsprite = 0
+                                        self.player_hurt.play(0)
+                                        self.player.life -= 1
+
+                        # Chama as funções de printar
+                        self.blitChar(self.player)
+                        self.drawCounter()
+                        self.drawLifes(self.player)
+
+                        # Verifica se o personagem está vivo
+                        if self.player.life <= 0:
+                            self.player_death.play(0)
+                            self.isRunning = False
+                            self.canEdit = True
+                    else:
+                        self.screen.blit(self.hs_bg, (0, 0))
+                        self.drawHS()
 
                 self.checkEvents()
                 pygame.display.flip()
