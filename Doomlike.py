@@ -187,7 +187,7 @@ class Player():  # Classe do jogador
         self.timer = 0
 
     def shootAnim(self):  # Gerencia animação de tiro
-        self.timer = (self.timer + 1) % 8
+        self.timer = (self.timer + 1) % 5
         if self.timer == 0:
             self.currsprite = (self.currsprite + 1) % 3
             if self.currsprite == 0:
@@ -492,9 +492,10 @@ class Game():  # Classe principal
 
                         # Gera inimigos
 
-                        self.enemyRespaw = (self.enemyRespaw +
-                                            1) % (300 - self.counter * 3)
-                        if self.enemyRespaw == 0:
+                        self.enemyRespaw = (
+                            self.enemyRespaw + 1) % (300 - self.counter * 1.5)
+
+                        if int(self.enemyRespaw) == 0:
                             self.enemyList.append(Enemy(self.screen, self.Orig_imgs, self.Hit_imgs, self.Orig_death,
                                                         self.Orig_explo, self.explo_sound, self.pain, self.roam_sound, self.death_sound))
 
