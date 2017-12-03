@@ -1,180 +1,32 @@
 import pygame
 import random
+# import os
 
 
-class Game():  # Classe principal
-    def __init__(self, screen):
-        # Definições da tela
-        self.screen = screen
-        self.scr_width = self.screen.get_rect().width
-        self.scr_height = self.screen.get_rect().height
+class Utils():  # Utilitarios
+    def getScores(self, file_name):  # Le a lista de highscores
+        List = []
+        f = open(file_name, "r")
+        for line in f:
+            if line[0] != "\n" and line[0] != "":
+                List.append(line.rstrip().split(';'))
+        f.close()
+        return (List)
 
-        # Carregar fonte
-        font = 'fonts/AmazDooMLeft.ttf'
-        font_size = 60
-        self.font = pygame.font.Font(font, font_size)
+    def sortScores(self, file_name):  # Organiza a lista
+        List = self.getScores(file_name)
+        sortedList = sorted(List, key=lambda score: int(score[1]))
+        sortedList.reverse()
+        f = open(file_name, "w")
+        for line in sortedList:
+            f.write(line[0] + ';' + line[1] + '\n')
+        f.close()
+        return (List)
 
-        # Carregar Audio
-        pygame.mixer.music.load('sounds/music0.ogg')
-        self.shoot_sound = pygame.mixer.Sound('sounds/shoot.wav')
-        self.player_death = pygame.mixer.Sound('sounds/PlayerDeath.wav')
-        self.player_hurt = pygame.mixer.Sound('sounds/PlayerHurt.wav')
-
-        # Carregar imagem de fundo
-        self.background = pygame.image.load('bg.jpg')
-        self.bg_size = self.background.get_width()
-
-        self.enemyRespaw = 1
-
-    def drawCounter(self):  # Desenha o contador de mortes
-        text = 'Kills: ' + str(self.counter)
-        text = self.font.render(text, True, (250, 250, 250))
-
-        t_w = text.get_rect().width
-
-        self.screen.blit(text, (self.scr_width / 2 - t_w / 2, 20))
-
-    def checkEvents(self):  # Eventos de input
-        global mainloop
-
-        pressed = pygame.key.get_pressed()
-        # Movimentação lateral
-        if pressed[pygame.K_d]:
-            for shoot in self.shootList:
-                shoot.refreshX(-10)
-            for enemy in self.enemyList:
-                enemy.refreshX(-10)
-            self.bg_pos[0] -= 10
-        if pressed[pygame.K_a]:
-            for shoot in self.shootList:
-                shoot.refreshX(10)
-            for enemy in self.enemyList:
-                enemy.refreshX(10)
-            self.bg_pos[0] += 10
-
-        # Fix da posição do background
-        if self.bg_pos[0] == -2650:
-            self.bg_pos[0] = 0
-        elif self.bg_pos[0] == 800:
-            self.bg_pos[0] = -1880
-
-        for event in pygame.event.get():
-
-            if event.type == pygame.KEYDOWN:
-                # Tiros
-                if event.key == pygame.K_SPACE:
-                    if self.shoot is False:
-                        self.shoot_sound.play(0)
-                        self.shoot = True
-                        self.shootList.append(Shoot(self.screen))
-
-    def blitChar(self, player):  # Printa a mão do personagem na tela
-        player_size = player.sprites[player.currsprite].get_rect().width / 2
-
-        if self.shoot is True:
-            self.shoot = player.shootAnim()
-
-        self.screen.blit(
-            player.sprites[player.currsprite], (self.scr_width / 2 - player_size, self.scr_height - player.sprites[player.currsprite].get_height()))
-
-    def drawLifes(self, player):  # Printa as faces e a quantidade de vidas do personagem
-        text = 'Lifes: ' + str(player.life)
-        text = self.font.render(text, True, (250, 250, 250))
-        img = pygame.transform.scale(
-            player.faces[4 - (player.life - 1)], (player.faces[4 - (player.life - 1)].get_width() * 3, player.faces[4 - (player.life - 1)].get_height() * 3))
-        self.screen.blit(img, (10, 500))
-        self.screen.blit(text, (100, 530))
-
-    def run(self):
-
-        while True:  # Loop principal
-            global mainloop
-            mainloop = True
-            self.counter = 0
-            self.shoot = False
-            self.bg_pos = [0, 0]
-            self.shootList = []
-            self.enemyList = []
-            pygame.mixer.music.play(-1)
-            player = Player()
-            while mainloop:  # Loop da partida
-
-                # Printa o background
-                self.screen.blit(self.background, self.bg_pos)
-
-                if self.bg_pos[0] < -1950:
-                    self.screen.blit(
-                        self.background, (self.bg_pos[0] + 1880 + self.scr_width, self.bg_pos[1]))
-                elif self.bg_pos[0] > 0:
-                    self.screen.blit(
-                        self.background, (self.bg_pos[0] - 2685, self.bg_pos[1]))
-
-                self.checkEvents()
-
-                # Printa os Tiros
-                for index, shoot in enumerate(self.shootList):
-                    shoot.refresh()
-                    self.screen.blit(shoot.img, (shoot.pos_x - 10 + int(shoot.Orig_img.get_width() / 2 - shoot.img.get_width() / 2),
-                                                 self.scr_height / 2 + 20 - int(shoot.pos_z / 10)))
-
-                    if shoot.pos_z >= self.scr_height / 2:
-                        self.shootList.pop(index)
-
-                # Gera inimigos
-
-                self.enemyRespaw = (self.enemyRespaw +
-                                    1) % (300 - self.counter * 3)
-                if self.enemyRespaw == 0:
-                    self.enemyList.append(Enemy(self.screen))
-
-                # Verifica colisão entre Shoot() e Enemy()
-                for enemy_index, enemy in enumerate(self.enemyList):
-                    for shoot_index, shoot in enumerate(self.shootList):
-
-                        enemy_dist = abs(enemy.pos_z) / 1000
-                        shoot_dist = abs(shoot.pos_z) / 240
-
-                        if enemy.rect.colliderect(shoot.rect) and abs(enemy_dist - shoot_dist) < 0.1:
-                            self.shootList.pop(shoot_index)
-                            enemy.pain.play(0)
-                            enemy.life -= 1
-                            enemy.hit = True
-                            enemy.hittimer = 0
-                            if enemy.life == 0:
-                                enemy.death_sound[random.randint(0, 1)].play(0)
-                                enemy.deadAnim()
-                    if enemy.dead is True:
-                        self.counter += 1
-                        self.enemyList.pop(enemy_index)
-
-                # Printa os inimigos
-                if len(self.enemyList) > 0:
-                    for enemy in reversed(self.enemyList):
-                        enemy.refresh()
-                        self.screen.blit(enemy.img, (enemy.pos_x - 10 + int(enemy.Orig_imgs[0].get_width() / 2 - enemy.img.get_width() / 2),
-                                                     self.scr_height / 2 - 90 - int(enemy.pos_z / 20)))
-
-                    # Dano no personagem baseado na pos_z do inimigo
-                    for enemy in self.enemyList:
-                        if enemy.pos_z < -1000:
-                            if enemy.exploding is False:
-                                enemy.explo_sound.play(0)
-                                enemy.exploding = True
-                                enemy.currsprite = 0
-                                self.player_hurt.play(0)
-                                player.life -= 1
-
-                # Chama as funções de printar
-                self.blitChar(player)
-                self.drawCounter()
-                self.drawLifes(player)
-
-                pygame.display.flip()
-
-                # Verifica se o personagem está vivo
-                if player.life <= 0:
-                    self.player_death.play(0)
-                    mainloop = False
+    def addToFile(self, newline, file_name):  # Adiciona um novo nome a lista
+        f = open(file_name, "a")
+        f.write(newline)
+        f.close()
 
 
 class Shoot():  # Classe do tiro
@@ -357,6 +209,294 @@ class Player():  # Classe do jogador
             if self.currsprite == 0:
                 return (False)
         return(True)
+
+
+class Game():  # Classe principal
+    def __init__(self, screen):
+        # Definições da tela
+        self.screen = screen
+        self.scr_width = self.screen.get_rect().width
+        self.scr_height = self.screen.get_rect().height
+
+        # Carregar fonte
+        font = 'fonts/AmazDooMLeft.ttf'
+        font_size = 60
+        self.font = pygame.font.Font(font, font_size)
+        self.title = pygame.font.Font(font, 80)
+
+        # Carregar Audio
+        pygame.mixer.music.load('sounds/music0.ogg')
+        self.shoot_sound = pygame.mixer.Sound('sounds/shoot.wav')
+        self.player_death = pygame.mixer.Sound('sounds/PlayerDeath.wav')
+        self.player_hurt = pygame.mixer.Sound('sounds/PlayerHurt.wav')
+
+        # Carregar imagem de fundo
+        self.background = pygame.image.load('bg.jpg')
+        self.hs_bg = pygame.image.load('highscore.png')
+        self.bg_size = self.background.get_width()
+
+        self.name = 'AAA'
+
+        self.enemyRespaw = 1
+
+    def drawCounter(self):  # Desenha o contador de mortes
+        text = 'Kills: ' + str(self.counter)
+        text = self.font.render(text, True, (250, 250, 250))
+
+        t_w = text.get_rect().width
+
+        self.screen.blit(text, (self.scr_width / 2 - t_w / 2, 20))
+
+    def drawHS(self):
+        text = self.title.render('HIGHSCORES', True, (200, 200, 200))
+        t_w = text.get_rect().width
+        self.screen.blit(text, (self.scr_width / 2 - t_w / 2, 20))
+
+        self.canEdit = True
+        isHigh = False
+        sumHigh = 0
+        HS_List = Utils().getScores('highscores')
+        if len(HS_List) > 5:
+            if self.counter > int(HS_List[5][1]):
+                isHigh = True
+
+        else:
+            isHigh = True
+
+        if isHigh is False:
+            if len(HS_List) > 5:
+                size = 5
+            else:
+                size = len(HS_List)
+            name = self.font.render('You', True, (150, 150, 150))
+            score = self.font.render(str(self.counter), True, (150, 150, 150))
+            s_w = score.get_rect().width
+            size += 1
+            self.screen.blit(
+                name, (self.scr_width / 2 - 200, 50 * size + 120))
+            self.screen.blit(
+                score, (self.scr_width / 2 + 200 - s_w, 50 * size + 120))
+            self.canEdit = False
+
+            text = self.font.render(
+                'press <ENTER> to restart', True, (250, 250, 250))
+            t_w = text.get_rect().width
+            self.screen.blit(text, (self.scr_width / 2 -
+                                    t_w / 2, self.scr_height - 80))
+
+        for index, hscore in enumerate(HS_List):
+            if index > 5:
+                break
+            if isHigh:
+                if self.counter > int(hscore[1]):
+                    name = self.font.render(self.name, True, (250, 50, 50))
+                    score = self.font.render(
+                        str(self.counter), True, (250, 50, 50))
+                    s_w = score.get_rect().width
+                    self.screen.blit(
+                        name, (self.scr_width / 2 - 200, 50 * index + sumHigh + 120))
+                    self.screen.blit(
+                        score, (self.scr_width / 2 + 200 - s_w, 50 * index + sumHigh + 120))
+                    sumHigh = 60
+                    isHigh = False
+
+            name = self.font.render(hscore[0], True, (250, 250, 250))
+            score = self.font.render(hscore[1], True, (250, 250, 250))
+            s_w = score.get_rect().width
+            self.screen.blit(
+                name, (self.scr_width / 2 - 200, 50 * index + sumHigh + 120))
+            self.screen.blit(
+                score, (self.scr_width / 2 + 200 - s_w, 50 * index + sumHigh + 120))
+
+    def checkEvents(self):  # Eventos de input
+        if self.isRunning:
+            pressed = pygame.key.get_pressed()
+            # Movimentação lateral
+            if pressed[pygame.K_d]:
+                for shoot in self.shootList:
+                    shoot.refreshX(-10)
+                for enemy in self.enemyList:
+                    enemy.refreshX(-10)
+                self.bg_pos[0] -= 10
+            if pressed[pygame.K_a]:
+                for shoot in self.shootList:
+                    shoot.refreshX(10)
+                for enemy in self.enemyList:
+                    enemy.refreshX(10)
+                self.bg_pos[0] += 10
+
+            # Fix da posição do background
+            if self.bg_pos[0] == -2650:
+                self.bg_pos[0] = 0
+            elif self.bg_pos[0] == 800:
+                self.bg_pos[0] = -1880
+
+            for event in pygame.event.get():
+
+                if event.type == pygame.KEYDOWN:
+                    # Tiros
+                    if event.key == pygame.K_SPACE:
+
+                        if self.shoot is False:
+                            self.shoot_sound.play(0)
+                            self.shoot = True
+                            self.shootList.append(Shoot(self.screen))
+                    elif event.key == pygame.K_w:
+                        self.enemyList.append(Enemy(self.screen))
+        else:
+            if self.canEdit:
+                for event in pygame.event.get():
+                    if event.type == pygame.KEYDOWN:
+                        if event.key >= 97 and event.key <= 122:
+                            if len(self.name) < 3:
+                                letter = chr(event.key)
+                                letter = letter.upper()
+                                self.name = self.name + letter
+
+                        elif event.key == pygame.K_SPACE:
+                            self.name = self.name + ' '
+                        elif event.key == pygame.K_BACKSPACE:
+                            self.name = self.name[:-1]
+                        elif event.key == pygame.K_RETURN:
+                            Utils().addToFile(self.name + ';' + str(self.counter), 'highscores')
+                            Utils().sortScores('highscores')
+                            self.reset()
+                        elif event.key == pygame.K_ESCAPE:
+                            exit()
+            else:
+                for event in pygame.event.get():
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_RETURN:
+                            self.reset()
+
+    def blitChar(self, player):  # Printa a mão do personagem na tela
+        player_size = player.sprites[player.currsprite].get_rect().width / 2
+
+        if self.shoot is True:
+            self.shoot = player.shootAnim()
+
+        self.screen.blit(
+            player.sprites[player.currsprite], (self.scr_width / 2 - player_size, self.scr_height - player.sprites[player.currsprite].get_height()))
+
+    def drawLifes(self, player):  # Printa as faces e a quantidade de vidas do personagem
+        text = 'Lifes: ' + str(player.life)
+        text = self.font.render(text, True, (250, 250, 250))
+        img = pygame.transform.scale(
+            player.faces[4 - (player.life - 1)], (player.faces[4 - (player.life - 1)].get_width() * 3, player.faces[4 - (player.life - 1)].get_height() * 3))
+        self.screen.blit(img, (10, 500))
+        self.screen.blit(text, (100, 530))
+
+    def reset(self):
+        self.counter = 0
+        self.shoot = False
+        self.bg_pos = [0, 0]
+        self.shootList = []
+        self.enemyList = []
+        self.isRunning = True
+
+        self.player = Player()
+
+    def printAll(self):
+        print('-------------____----------')
+        print(self.counter)
+        print(self.shoot)
+        print(self.bg_pos)
+        print(self.shootList)
+        print(self.enemyList)
+        print(self.isRunning)
+
+    def run(self):
+        self.isRunning = True
+        while True:  # Loop principal
+            global mainloop
+            mainloop = True
+
+            pygame.mixer.music.play(-1)
+            self.reset()
+
+            while mainloop:  # Loop da partida
+                self.printAll()
+                if self.isRunning:
+                    # Printa o background
+                    self.screen.blit(self.background, self.bg_pos)
+
+                    if self.bg_pos[0] < -1950:
+                        self.screen.blit(
+                            self.background, (self.bg_pos[0] + 1880 + self.scr_width, self.bg_pos[1]))
+                    elif self.bg_pos[0] > 0:
+                        self.screen.blit(
+                            self.background, (self.bg_pos[0] - 2685, self.bg_pos[1]))
+
+                    # Printa os Tiros
+                    for index, shoot in enumerate(self.shootList):
+                        shoot.refresh()
+                        self.screen.blit(shoot.img, (shoot.pos_x - 10 + int(shoot.Orig_img.get_width() / 2 - shoot.img.get_width() / 2),
+                                                     self.scr_height / 2 + 20 - int(shoot.pos_z / 10)))
+
+                        if shoot.pos_z >= self.scr_height / 2:
+                            self.shootList.pop(index)
+
+                    # Gera inimigos
+
+                    self.enemyRespaw = (self.enemyRespaw +
+                                        1) % (300 - self.counter * 3)
+                    if self.enemyRespaw == 0:
+                        self.enemyList.append(Enemy(self.screen))
+
+                    # Verifica colisão entre Shoot() e Enemy()
+                    for enemy_index, enemy in enumerate(self.enemyList):
+                        for shoot_index, shoot in enumerate(self.shootList):
+
+                            enemy_dist = abs(enemy.pos_z) / 1000
+                            shoot_dist = abs(shoot.pos_z) / 240
+
+                            if enemy.rect.colliderect(shoot.rect) and abs(enemy_dist - shoot_dist) < 0.1:
+                                self.shootList.pop(shoot_index)
+                                enemy.pain.play(0)
+                                enemy.life -= 1
+                                enemy.hit = True
+                                enemy.hittimer = 0
+                                if enemy.life == 0:
+                                    enemy.death_sound[random.randint(
+                                        0, 1)].play(0)
+                                    enemy.deadAnim()
+                        if enemy.dead is True:
+                            self.counter += 1
+                            self.enemyList.pop(enemy_index)
+
+                    # Printa os inimigos
+                    if len(self.enemyList) > 0:
+                        for enemy in reversed(self.enemyList):
+                            enemy.refresh()
+                            self.screen.blit(enemy.img, (enemy.pos_x - 10 + int(enemy.Orig_imgs[0].get_width() / 2 - enemy.img.get_width() / 2),
+                                                         self.scr_height / 2 - 90 - int(enemy.pos_z / 20)))
+
+                        # Dano no personagem baseado na pos_z do inimigo
+                        for enemy in self.enemyList:
+                            if enemy.pos_z < -1000:
+                                if enemy.exploding is False:
+                                    enemy.explo_sound.play(0)
+                                    enemy.exploding = True
+                                    enemy.currsprite = 0
+                                    self.player_hurt.play(0)
+                                    self.player.life -= 1
+
+                    # Chama as funções de printar
+                    self.blitChar(self.player)
+                    self.drawCounter()
+                    self.drawLifes(self.player)
+
+                    # Verifica se o personagem está vivo
+                    if self.player.life <= 0:
+                        self.player_death.play(0)
+                        self.isRunning = False
+                        self.canEdit = True
+                else:
+                    self.screen.blit(self.hs_bg, (0, 0))
+                    self.drawHS()
+
+                self.checkEvents()
+                pygame.display.flip()
 
 
 # Inicializa pygame e mixer
