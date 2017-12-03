@@ -115,8 +115,8 @@ class Enemy():  # Classe de inimigos
             self.img = pygame.transform.scale(
                 self.Orig_death[self.currsprite], (int(self.Orig_death[0].get_width() - size), int(self.Orig_death[0].get_height() - size)))
 
-            self.rect = pygame.Rect(self.pos_x - 10 + int(self.Orig_death[0].get_width() / 2 - self.img.get_width() / 4),
-                                    self.screen.get_rect().height / 4 - int(self.pos_z / 20) + 110, self.img.get_width() / 2, self.img.get_height() / 2)
+            self.rect = pygame.Rect(self.screen.get_rect().width,
+                                    self.screen.get_rect().height, self.img.get_width() / 2, self.img.get_height() / 2)
 
             self.timer = (self.timer + 1) % 5
             if self.timer == 0:
@@ -130,8 +130,8 @@ class Enemy():  # Classe de inimigos
             self.img = pygame.transform.scale(
                 self.Orig_explo[self.currsprite], (int(self.Orig_explo[0].get_width() - size) * 2, int(self.Orig_explo[0].get_height() - size) * 2))
 
-            self.rect = pygame.Rect(self.pos_x - 10 + int(self.Orig_explo[0].get_width() / 2 - self.img.get_width() / 4),
-                                    self.screen.get_rect().height / 4 - int(self.pos_z / 20) + 110, self.img.get_width() / 2, self.img.get_height() / 2)
+            self.rect = pygame.Rect(self.screen.get_rect().width,
+                                    self.screen.get_rect().height, self.img.get_width() / 2, self.img.get_height() / 2)
 
             self.timer = (self.timer + 1) % 5
             if self.timer == 0:
@@ -187,7 +187,7 @@ class Player():  # Classe do jogador
         self.timer = 0
 
     def shootAnim(self):  # Gerencia animação de tiro
-        self.timer = (self.timer + 1) % 5
+        self.timer = (self.timer + 1) % 6
         if self.timer == 0:
             self.currsprite = (self.currsprite + 1) % 3
             if self.currsprite == 0:
