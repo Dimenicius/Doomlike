@@ -14,8 +14,12 @@ In game folder ```python Doomlike.py``` or ```python3 Doomlike.py```
 
 **```<ENTER>```** to select
 
+**```<ESC>```** to exit
+
 **In game:**
 
 **```<A>```** and **```<D>```** to move
 
 **```<SPACE>```** to shoot
+
+**```<ESC>```** to exit

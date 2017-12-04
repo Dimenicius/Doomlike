@@ -364,6 +364,8 @@ class Game():  # Classe principal
                         elif self.menu_pos == 1:
                             self.Menu = False
                             self.isRunning = False
+                    elif event.key == pygame.K_ESCAPE:
+                        exit()
 
         elif self.isRunning:
             pressed = pygame.key.get_pressed()
@@ -401,7 +403,8 @@ class Game():  # Classe principal
                     elif event.key == pygame.K_w:
                         self.enemyList.append(Enemy(self.screen, self.Orig_imgs, self.Hit_imgs, self.Orig_death,
                                                     self.Orig_explo, self.explo_sound, self.pain, self.roam_sound, self.death_sound))
-
+                    elif event.key == pygame.K_ESCAPE:
+                        exit()
         else:
             if self.canEdit:
                 for event in pygame.event.get():
@@ -429,6 +432,8 @@ class Game():  # Classe principal
                         if event.key == pygame.K_RETURN:
                             self.Menu = True
                             self.reset()
+                        elif event.key == pygame.K_ESCAPE:
+                            exit()
 
     def blitChar(self, player):  # Printa a mão do personagem na tela
         player_size = player.sprites[player.currsprite].get_rect().width / 2
